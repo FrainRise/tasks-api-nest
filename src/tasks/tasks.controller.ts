@@ -12,11 +12,11 @@ import {
   Post,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { ITask } from './models/task.model';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { FindByIdParams } from './params/find-by-id.param';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
+import { Task } from './task.entity';
 
 @Controller('tasks')
 export class TasksController {
@@ -24,28 +24,28 @@ export class TasksController {
 
   // endpoints
   @Get()
-  findAll(): ITask[] {
-    return this.tasksService.findAll();
+  async findAll(): Promise<Task[]> {
+    return await this.tasksService.findAll();
   }
 
   @Get('/:id')
-  findById(@Param() params: FindByIdParams): ITask {
-    return this.findByIdOrFail(params.id);
+  async findById(@Param() params: FindByIdParams): Promise<Task> {
+    return await this.findByIdOrFail(params.id);
   }
 
   @Post()
-  createTask(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.createTask(createTaskDto);
+  async createTask(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
+    return await this.tasksService.createTask(createTaskDto);
   }
 
   @Patch('/:id')
-  updateTask(
+  async updateTask(
     @Param() params: FindByIdParams,
     @Body() updateTaskDto: UpdateTaskDto,
-  ): ITask {
-    const task = this.findByIdOrFail(params.id);
+  ): Promise<Task> {
+    const task = await this.findByIdOrFail(params.id);
     try {
-      return this.tasksService.updateTask(task, updateTaskDto);
+      return await this.tasksService.updateTask(task, updateTaskDto);
     } catch (error) {
       if (error instanceof WrongTaskStatusException) {
         throw new BadRequestException(error.message);
@@ -56,14 +56,14 @@ export class TasksController {
 
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteTask(@Param() params: FindByIdParams): void {
-    const task = this.findByIdOrFail(params.id);
-    this.tasksService.deleteTask(task);
+  async deleteTask(@Param() params: FindByIdParams): Promise<void> {
+    const task = await this.findByIdOrFail(params.id);
+    await this.tasksService.deleteTask(task);
   }
 
   // helpers
-  findByIdOrFail(id: string): ITask {
-    const task = this.tasksService.findById(id);
+  private async findByIdOrFail(id: string): Promise<Task> {
+    const task = await this.tasksService.findById(id);
     if (task) {
       return task;
     }

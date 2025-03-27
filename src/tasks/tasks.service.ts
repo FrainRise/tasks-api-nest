@@ -1,35 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { ITask, TaskStatus } from './models/task.model';
+import { TaskStatus } from './models/task.model';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { randomUUID } from 'crypto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
+import { Repository } from 'typeorm';
+import { Task } from './task.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 const statusOrder = [TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.DONE];
 
 @Injectable()
 export class TasksService {
-  private tasks: ITask[] = [];
+  constructor(
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
+  ) {}
 
-  findAll(): ITask[] {
-    return this.tasks;
+  async findAll(): Promise<Task[]> {
+    return await this.taskRepository.find();
   }
 
-  findById(id: string): ITask | undefined {
-    return this.tasks.find((task) => task.id === id);
+  async findById(id: string): Promise<Task | null> {
+    return await this.taskRepository.findOneBy({ id });
   }
 
-  createTask(payload: CreateTaskDto): ITask {
-    const task: ITask = {
-      id: randomUUID(),
-      ...payload,
-    };
-
-    this.tasks.push(task);
-    return task;
+  async createTask(payload: CreateTaskDto): Promise<Task> {
+    return await this.taskRepository.save(payload);
   }
 
-  updateTask(task: ITask, updateTaskDto: UpdateTaskDto): ITask {
+  async updateTask(task: Task, updateTaskDto: UpdateTaskDto): Promise<Task> {
     if (
       updateTaskDto.status &&
       !this.isValidStatusOrder(task.status, updateTaskDto.status)
@@ -42,13 +41,11 @@ export class TasksService {
       ...updateTaskDto,
     };
 
-    return updatedTask;
+    return await this.taskRepository.save(updatedTask);
   }
 
-  deleteTask(task: ITask): void {
-    this.tasks = this.tasks.filter(
-      (filteredTask) => filteredTask.id !== task.id,
-    );
+  async deleteTask(task: Task): Promise<void> {
+    await this.taskRepository.delete(task);
   }
 
   isValidStatusOrder(
