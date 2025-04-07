@@ -1,5 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { TaskStatus } from './models/task.model';
+import { User } from 'src/users/user.entity';
+import { TaskLabel } from './task-label.entity';
 
 @Entity()
 export class Task {
@@ -25,4 +33,15 @@ export class Task {
     default: TaskStatus.OPEN,
   })
   status: TaskStatus;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, (user) => user.tasks, { nullable: false })
+  user: User;
+
+  @OneToMany(() => TaskLabel, (label) => label.task, {
+    cascade: true,
+  })
+  labels: TaskLabel[];
 }

@@ -17,6 +17,7 @@ import { FindByIdParams } from './params/find-by-id.param';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { WrongTaskStatusException } from './exceptions/wrong-task-status.exception';
 import { Task } from './task.entity';
+import { CreateTaskLabelDto } from './dto/create-task-label.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -28,7 +29,7 @@ export class TasksController {
     return await this.tasksService.findAll();
   }
 
-  @Get('/:id')
+  @Get(':id')
   async findById(@Param() params: FindByIdParams): Promise<Task> {
     return await this.findByIdOrFail(params.id);
   }
@@ -38,7 +39,7 @@ export class TasksController {
     return await this.tasksService.createTask(createTaskDto);
   }
 
-  @Patch('/:id')
+  @Patch(':id')
   async updateTask(
     @Param() params: FindByIdParams,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -54,11 +55,29 @@ export class TasksController {
     }
   }
 
-  @Delete('/:id')
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteTask(@Param() params: FindByIdParams): Promise<void> {
     const task = await this.findByIdOrFail(params.id);
     await this.tasksService.deleteTask(task);
+  }
+
+  @Post(':id/labels')
+  async addLabels(
+    @Param() { id }: FindByIdParams,
+    @Body() labels: CreateTaskLabelDto[],
+  ): Promise<Task> {
+    const task = await this.findByIdOrFail(id);
+    return await this.tasksService.addLabels(task, labels);
+  }
+
+  @Delete(':id/labels')
+  async removeLabels(
+    @Param() { id }: FindByIdParams,
+    @Body() labelNames: string[],
+  ): Promise<void> {
+    const task = await this.findByIdOrFail(id);
+    await this.tasksService.removeLabels(task, labelNames);
   }
 
   // helpers
